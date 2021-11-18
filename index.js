@@ -1,5 +1,6 @@
 const express    = require("express")
 const bodyParser = require('body-parser')
+const cors       = require('cors')
 const {
     port,
     db_user,
@@ -18,6 +19,7 @@ const appPort     = port || 3000
 
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
+app.use(cors())
 
 const getCollection = async (db, collection) => {
     await mongoClient.connect()

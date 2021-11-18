@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> -->
+
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@4.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <title>Seriados</title>
+</head>
+<body>
+    <div id="app">
+        <v-app>
+            <v-main style="border: 1px solid #616161;">
+                <v-container>
+                    <!-- FORM PARA ADICIONAR SÉRIE -->
+                    <template>
+                        <h4 class="text-center mb-2" style="color: #616161;">SERIADOS</h4>
+
+                        <v-form class="no-print" ref="form" v-model="valid">
+                            <v-container>
+                            <v-row>
+                                <v-col cols="6" md="6">
+                                    <v-text-field
+                                        outlined
+                                        dense
+                                        v-model="name"
+                                        :rules="[v => !!v || 'Informe o nome da série']"
+                                        label="Série"
+                                        required
+                                    >
+                                </v-col>
+
+                                <v-col cols="3" md="3">
+                                    <v-btn
+                                        v-if="!isEdit"
+                                        submit
+                                        :disabled="!valid"
+                                        block
+                                        color="primary"
+                                        @click="add"
+                                    >
+                                        Adicionar
+                                    </v-btn>
+
+                                    <v-btn
+                                        v-else
+                                        submit
+                                        :disabled="!valid"
+                                        block
+                                        color="primary"
+                                        @click="edit"
+                                    >
+                                        Editar
+                                    </v-btn>
+                                </v-col>
+
+                                <v-col cols="3" md="3">
+                                    <v-btn
+                                        v-if="!isEdit"
+                                        outlined
+                                        block
+                                        @click="clear"
+                                    >
+                                        Limpar
+                                    </v-btn>
+
+                                    <v-btn
+                                        v-else
+                                        outlined
+                                        block
+                                        @click="cancelEdit"
+                                    >
+                                        Cancelar
+                                    </v-btn>
+                                </v-col>
+                            </v-row>
+                            </v-container>
+                        </v-form>
+                    </template>
+
+                    <!-- LISTA DE MATERIAIS -->
+                    <template>
+                        <v-container>
+                            <v-simple-table dense>
+                              <template v-slot:default>
+                                <thead>
+                                  <tr>
+                                    <th class="text-left">Série</th>
+                                    <th class="text-center no-print">Ações</th>
+                                  </tr>
+                                </thead>
+
+                                <tbody>
+                                  <tr
+                                    v-for="(item, index) in items"
+                                    :key="index"
+                                  >
+                                    <td>{{ item.name }}</td>
+                                    <td class="d-flex justify-space-around no-print">
+                                        <v-icon
+                                            color="primary"
+                                            @click="show(index, item._id)"
+                                        >
+                                            mdi-pencil-circle
+                                        </v-icon>
+    
+                                        <v-icon
+                                            color="red"
+                                            @click="remove(item._id)"
+                                        >
+                                            mdi-close-circle
+                                        </v-icon>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </template>
+                            </v-simple-table>
+                        </v-container>
+                    </template>
+                </v-container>
+            </v-main>
+        </v-app>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            vuetify: new Vuetify(),
+            data: {
+                valid      : false,
+                name       : '',
+                items      : [],
+                isEdit     : false,
+                indexToEdit: undefined,
+                baseApiUrl : 'http://localhost:3002'
+            },
+
+            methods: {
+                clear() {
+                    this.name = ''
+                },
+
+                show(index, id) {
+                    this.isEdit      = true
+                    this.indexToEdit = id
+                    this.name        = this.items[index].name
+                },
+
+                cancelEdit() {
+                    this.isEdit      = false
+                    this.indexToEdit = undefined
+                    this.clear()
+                },
+
+                async findAll() {
+                    await fetch(this.baseApiUrl + '/find')
+                        .then(response => response.json())
+                        .then(data => this.items = data.data)
+                },
+
+                async add() {
+                    await fetch(this.baseApiUrl + '/insert', {
+                        method : 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body   : JSON.stringify({ name: this.name }),
+                        mode   : 'cors'
+                    })
+                        
+                    this.clear()
+                    await this.findAll()
+                },
+
+                async edit() {
+                    await fetch(`${this.baseApiUrl}/update/${this.indexToEdit}`, {
+                        method : 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body   : JSON.stringify({ name: this.name }),
+                        mode   : 'cors'
+                    })
+                        
+                    this.clear()
+                    await this.findAll()
+                    this.isEdit = false
+                },
+
+                async remove(id) {
+                    await fetch(`${this.baseApiUrl}/delete/${id}`, { method : 'DELETE' })
+                        
+                    this.clear()
+                    await this.findAll()
+                    this.isEdit = false
+                }
+            },
+
+            async mounted() {
+                await this.findAll()
+            }
+        })
+    </script>
+</body>
+</html>
